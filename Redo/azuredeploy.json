@@ -1,0 +1,86 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "outputs": {},
+  "parameters": {
+    "aseName": {
+      "type": "string"
+    },
+    "aseLocation": {
+      "type": "string"
+    },
+    "multiRoleCount":{
+      "type": "string"
+    },
+    "multiSize":{
+      "type": "string"
+    },
+    "aseRG": {
+      "type": "string"
+    },
+    "aseVnet": {
+      "type": "string"
+    },
+    "aseSubNet": {
+      "type": "string"
+    },
+    "aseScaleProfile": {
+      "type": "string"
+    },
+    "TagAssetCD": {
+      "type": "string"
+    },
+    "TagProjCD": {
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      // this will create the ASE
+      "apiVersion": "2016-09-01",
+      "type": "Microsoft.Web/hostingEnvironments",
+      "name": "[parameters('aseName')]",
+      "location": "[parameters('aseLocation')]",
+      "tags": {
+        "Primary_System_Code": "[parameters('TagAssetCD')]",
+        "Project_Code": "[parameters('TagProjCD')]"
+      },
+      "properties": {
+        "name": "[parameters('aseName')]",
+        "location": "[parameters('aseLocation')]",
+        //"MultiRoleCount": "[variables('aseProfile')[parameters('aseScaleProfile')].multiRoleCount",
+        //"MultiSize": "[variables('aseProfile')[parameters('aseScaleProfile')].MultiSize]",
+        "multiRoleCount": "[parameters('multiRoleCount')]",
+        "multiSize": "[parameters('multiSize')]",
+        "tags": {
+          "Primary_System_Code": "[parameters('TagAssetCD')]",
+          "Project_Code": "[parameters('TagProjCD')]"
+        },
+        "virtualNetwork": {
+          "Id": "[resourceId(parameters('aseRG'), 'Microsoft.Network/virtualNetworks', parameters('aseVnet'))]",
+          "Subnet": "[parameters('aseSubNet')]"
+        },
+        "workerPools": [
+          "[variables('aseProfile')[parameters('aseScaleProfile')].zero]"
+          // "[variables('aseProfile')[parameters('aseScaleProfile')].one]"
+          // "[variables('aseProfile')[parameters('aseScaleProfile')].two]"
+        ]
+      }
+    }
+  ],
+  "variables": {
+    "aseProfile": {
+      "M": {
+        "zero": {
+          "workerCount": 2,        // num of VMs in the pool
+          "workerSize": "Small",   // size of the vms in the pool e.g. p2
+          "workerSizeId": 0,
+          "tags": {
+            "Primary_System_Code": "[parameters('TagAssetCD')]",
+            "Project_Code": "[parameters('TagProjCD')]"
+          }
+        }
+      }
+    }
+  }
+}

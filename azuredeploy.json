@@ -1,0 +1,81 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "outputs": {},
+  "parameters": {
+    "aseName": {
+      "type": "string"
+    },
+    "aseLocation": {
+      "type": "string"
+    },
+    "multiRoleCount":{
+      "type": "string"
+    },
+    "multiSize":{
+      "type": "string"
+    },
+    "aseRG": {
+      "type": "string"
+    },
+    "aseVnet": {
+      "type": "string"
+    },
+    "aseSubNet": {
+      "type": "string"
+    },
+    "TagAssetCD": {
+      "type": "string"
+    },
+    "TagProjCD": {
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      // this will create the ASE
+      "apiVersion": "2016-09-01",
+      "type": "Microsoft.Web/hostingEnvironments",
+      "name": "[parameters('aseName')]",
+      "location": "[parameters('aseLocation')]",
+      "tags": {
+        "Primary_System_Code": "[parameters('TagAssetCD')]",
+        "Project_Code": "[parameters('TagProjCD')]"
+      },
+      "properties": {
+        "name": "[parameters('aseName')]",
+        "location": "[parameters('aseLocation')]",
+        "multiRoleCount": "[parameters('multiRoleCount')]",
+        "multiSize": "[parameters('multiSize')]",
+        "tags": {
+          "Primary_System_Code": "[parameters('TagAssetCD')]",
+          "Project_Code": "[parameters('TagProjCD')]"
+        },
+        "virtualNetwork": {
+          "Id": "[resourceId(parameters('aseRG'), 'Microsoft.Network/virtualNetworks', parameters('aseVnet'))]",
+          "Subnet": "[parameters('aseSubNet')]"
+        }
+      }
+    },
+    {
+      "apiVersion": "2016-09-01",
+      "type": "Microsoft.Web/hostingEnvironments/workerPools",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/hostingEnvironments', parameters('aseName'))]"
+      ],
+      "name": "[concat( parameters('aseName'), '/Lending0')]",
+              "/subscriptions/059ed1ab-6824-4344-9a65-a0504248340f/resourceGroups/InfrastructureServices/providers/Microsoft.Web/hostingEnvironments/B2-ASE-Jon1/workerPools/0"
+
+      "location": "[parameters('aseLocation')]",
+      "tags": {
+        "Primary_System_Code": "[parameters('TagAssetCD')]",
+        "Project_Code": "[parameters('TagProjCD')]"
+      },
+      "properties": {
+        "workerSizeId": 0,
+        "workerSize": "Medium",
+        "workerCount": 3
+      }
+    },
+  ]
+}

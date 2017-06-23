@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "aseName": {
+      "value": "B2-ASE-Jon"
+    },
+    "aseLocation": {
+      "value": "East US 2"
+    },
+    "aseRG": {
+      "value": "InfrastructureServices"
+    },
+    "aseVnet": {
+      "value": "DNet"
+    },
+    "aseSubNet": {
+      "value": "Dnet_B2-LoanSaver"
+    },
+    "aseScaleProfile": {
+      "value": "S"
+    },
+   "TagAssetCD": {
+      "value": "Lending"
+    },
+    "TagProjCD": {
+      "value": "000000000"
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "outputs": {},
+  "parameters": {
+    "aseName": {
+      "type": "string"
+    },
+    "aseLocation": {
+      "type": "string"
+    },
+    "wrkSizeID": {
+      "type": "string"
+    },
+    "wrkSize": {
+      "type": "string"
+    },
+    "wrkCount": {
+      "type": "string"
+    },
+    "TagAssetCD": {
+      "type": "string"
+    },
+    "TagProjCD": {
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      // this will create the worker pool under an existing ASE
+      "apiVersion": "2016-09-01",
+      "type": "Microsoft.Web/hostingEnvironments/workerPools",
+      "name": "[concat( parameters('aseName'), '/', parameters('wrkSizeID'))]",
+      "location": "[parameters('aseLocation')]",
+      "tags": {
+        "Primary_System_Code": "Jonwashere",
+        "Project_Code": "6969696969"
+      },
+      "properties": {
+        "workerSizeId": "[parameters('wrkSizeID')]",
+        "workerSize": "[parameters('wrkSize')]",
+        "workerCount": "[parameters('wrkCount')]"
+      }
+    }
+  ]
+}

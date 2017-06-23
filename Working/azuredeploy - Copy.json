@@ -1,0 +1,238 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "outputs": {},
+  "parameters": {
+    "environmentTypes": {
+      "type": "array"
+    },
+    "environments": {
+      "type": "array"
+    }
+  },
+  "resources": [
+    {
+      "apiVersion": "2017-04-01",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "copy": {
+        "count": "[length(parameters('environmentTypes'))]",
+        "name": "environmentTypes"
+      },
+      "location": "[resourceGroup().location]",
+      "name": "[concat(parameters('environmentTypes')[copyIndex()].aseName,'pip')]",
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic"
+      }
+    },
+    {
+      "apiVersion": "2016-09-01",
+      "type": "Microsoft.Web/hostingEnvironments",
+      "copy": {
+        "count": "[length(parameters('environmentTypes'))]",
+        "name": "environmentTypes"
+      },
+      "dependsOn": [
+        "[concat(parameters('environmentTypes')[copyIndex()].aseName,'pip')]"
+      ],
+      "location": "[variables('ase').location[resourceGroup().location]]",
+      "name": "[parameters('environmentTypes')[copyIndex()].aseName]",
+      "properties": {
+        "internalLoadBalancingMode": "Web",
+        "location": "[variables('ase').location[resourceGroup().location]]",
+        "multiRoleCount": "[variables('ase').scaleProfile[parameters('environmentTypes')[copyIndex()].aseScaleProfile].multiRoleCount]",
+        "multiSize": "[variables('ase').scaleProfile[parameters('environmentTypes')[copyIndex()].aseScaleProfile].multiSize]",
+        "virtualNetwork": {
+          "Id": "[resourceId(parameters('environmentTypes')[copyIndex()].vnetRg, 'Microsoft.Network/virtualNetworks', parameters('environmentTypes')[copyIndex()].vnet)]",
+          "Subnet": "[parameters('environmentTypes')[copyIndex()].subnet]"
+        },
+        "workerPools": [
+          "[variables('ase').scaleProfile[parameters('environmentTypes')[copyIndex()].aseScaleProfile].zero]",
+          "[variables('ase').scaleProfile[parameters('environmentTypes')[copyIndex()].aseScaleProfile].one]",
+          "[variables('ase').scaleProfile[parameters('environmentTypes')[copyIndex()].aseScaleProfile].two]"
+        ]
+      }
+    },
+    {
+      "apiVersion": "2017-03-01",
+      "type": "Microsoft.Network/applicationGateways",
+      "copy": {
+        "count": "[length(parameters('environmentTypes'))]",
+        "name": "environmentTypes"
+      },
+      "location": "[resourceGroup().location]",
+      "name": "[parameters('environmentTypes')[copyIndex()].agName]",
+      "properties": {
+        "backendAddressPools": [
+          {
+            "name": "appGatewayBackendPool",
+            "properties": {
+              "BackendAddresses": [
+                {
+                  "IpAddress": "10.0.0.1"
+                },
+                {
+                  "IpAddress": "10.0.0.2"
+                }
+              ]
+            }
+          }
+        ],
+        "backendHttpSettingsCollection": [
+          {
+            "name": "appGatewayBackendHttpSettings",
+            "properties": {
+              "CookieBasedAffinity": "Disabled",
+              "Port": 80,
+              "Protocol": "Http"
+            }
+          }
+        ],
+        "frontendIPConfigurations": [
+          {
+            "name": "appGatewayFrontendIP",
+            "properties": {
+              "PublicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses',concat(parameters('environmentTypes')[copyIndex()].aseName,'pip'))]"
+              }
+            }
+          }
+        ],
+        "frontendPorts": [
+          {
+            "name": "appGatewayFrontendPort",
+            "properties": {
+              "Port": 80
+            }
+          }
+        ],
+        "gatewayIPConfigurations": [
+          {
+            "name": "appGatewayIpConfig",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId(parameters('environmentTypes')[copyIndex()].vnetRg, 'Microsoft.Network/virtualNetworks/subnets', parameters('environmentTypes')[copyIndex()].vnet, parameters('environmentTypes')[copyIndex()].agSubnet)]"
+              }
+            }
+          }
+        ],
+        "httpListeners": [
+          {
+            "name": "appGatewayHttpListener",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations',parameters('environmentTypes')[copyIndex()].aseName,'appGatewayFrontendIP')]"
+              },
+              "FrontendPort": {
+                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts',parameters('environmentTypes')[copyIndex()].aseName,'appGatewayFrontendPort')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          }
+        ],
+        "requestRoutingRules": [
+          {
+            "Name": "rule1",
+            "properties": {
+              "RuleType": "Basic",
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools',parameters('environmentTypes')[copyIndex()].aseName,'appGatewayBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection',parameters('environmentTypes')[copyIndex()].aseName,'appGatewayBackendHttpSettings')]"
+              },
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners',parameters('environmentTypes')[copyIndex()].aseName,'appGatewayHttpListener')]"
+              }
+            }
+          }
+        ],
+        "sku": "[variables('ag').scaleProfile[parameters('environmentTypes')[copyIndex()].agScaleProfile].sku]",
+        "webApplicationFirewallConfiguration": "[variables('ag').scaleProfile[parameters('environmentTypes')[copyIndex()].agScaleProfile].waf]"
+      }
+    }
+  ],
+  "variables": {
+    "ag": {
+      "scaleProfile": {
+        "M": {
+          "sku": {
+            "capacity": 2,
+            "name": "WAF_Medium",
+            "tier": "WAF"
+          },
+          "waf": {
+            "disabledRuleGroups": [],
+            "enabled": true,
+            "firewallMode": "Detection",
+            "ruleSetType": "OWASP",
+            "ruleSetVersion": "3.0"
+          }
+        }
+      }
+    },
+    "ase": {
+      "location": {
+        "centralus": "Central US",
+        "nocentralus": "North Central US"
+      },
+      "scaleProfile": {
+        "M": {
+          "location": "Central US",
+          "multiRoleCount": 2,
+          "multiSize": "Medium",
+          "one": {
+            "workerCount": 2,
+            "workerSize": "Small",
+            "workerSizeId": 1
+          },
+          "two": {
+            "workerCount": 2,
+            "workerSize": "Small",
+            "workerSizeId": 2
+          },
+          "zero": {
+            "workerCount": 2,
+            "workerSize": "Small",
+            "workerSizeId": 0
+          }
+        }
+      }
+    },
+    "scaleProfile": {
+      "L": {
+        "numberOfWorkers": 1,
+        "sku": {
+          "capacity": 1,
+          "family": "P",
+          "name": "P1",
+          "size": "P1",
+          "tier": "Premium"
+        },
+        "workerSize": "1"
+      },
+      "M": {
+        "numberOfWorkers": 1,
+        "sku": {
+          "capacity": 1,
+          "family": "S",
+          "name": "S1",
+          "size": "S1",
+          "tier": "Standard"
+        },
+        "workerSize": "1"
+      },
+      "S": {
+        "numberOfWorkers": 1,
+        "sku": {
+          "capacity": 0,
+          "family": "F",
+          "name": "F1",
+          "size": "F1",
+          "tier": "Free"
+        },
+        "workerSize": "0"
+      }
+    }
+  }
+}

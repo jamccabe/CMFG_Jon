@@ -1,0 +1,83 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "outputs": {},
+  "parameters": {
+    "aseName": {
+      "type": "string"
+    },
+    "aseLocation": {
+      "type": "string"
+    },
+    "aseRG": {
+      "type": "string"
+    },
+    "aseMultiRoleCount": {
+      "type": "string"
+    },
+    "aseMultiSize": {
+      "type": "string"
+    },
+    "aseVnet": {
+      "type": "string"
+    },
+    "aseSubNet": {
+      "type": "string"
+    },
+    "aseScaleProfile": {
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      // this will create the ASE
+      "apiVersion": "2016-09-01",
+      "type": "Microsoft.Web/hostingEnvironments",
+      "name": "[parameters('aseName')]",
+      "location": "[parameters('aseLocation')]",
+      "properties": {
+        "internalLoadBalancingMode": "Web",
+        "location": "[parameters('aseLocation')]",
+        "multiRoleCount": "[parameters('aseMultiRoleCount')]",
+        "multiSize": "[parameters('aseMultiSize')]",
+        "virtualNetwork": {
+          // "Id": "subscriptions/059ed1ab-6824-4344-9a65-a0504248340f/resourceGroups/InfrastructureServices/providers/Microsoft.Network/virtualNetworks/DNet",
+          // "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('AppServicePlanName'))]"
+          "Id": "[resourceId(parameters('aseRG'), 'Microsoft.Network/virtualNetworks', parameters('aseVnet'))]",
+          // [resourceGroup().id]    will give you     /subscriptions/059ed1ab-6824-4344-9a65-a0504248340f/resourceGroups/RG-CMFG-NC1-NP1-Lending-PLG-SHR
+          "Subnet": "[parameters('aseSubNet')]"
+        },
+        "workerPools": [
+          "[[variables('aseProfile[parameters('aseMultiSize')].zero]",
+          "[[variables('aseProfile[parameters('aseMultiSize')].one]",
+          "[[variables('aseProfile[parameters('aseMultiSize')].two]"
+          //"numberOfWorkers": "[variables('scaleProfile')[parameters('AppServicePlanScaleProfile')].numberOfWorkers]",
+        ]
+      }
+    }
+  ],
+  "variables": {
+    "aseProfile": {
+      "M": {
+        "location": "Central US",
+        "multiRoleCount": 2,
+        "multiSize": "Medium",
+        "zero": {
+          "workerCount": 2,
+          "workerSize": "Small",
+          "workerSizeId": 0
+        },
+        "one": {
+          "workerCount": 2,
+          "workerSize": "Small",
+          "workerSizeId": 1
+        },
+        "two": {
+          "workerCount": 2,
+          "workerSize": "Small",
+          "workerSizeId": 2
+        }
+      }
+    },
+  }
+}

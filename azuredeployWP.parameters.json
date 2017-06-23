@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "aseName": {
+      "value": "B2-ASE-Jon1"
+    },
+    "aseLocation": {
+      "value": "East US 2"
+    },
+    "wrkSizeID": {
+      "value": "0"
+    },
+    "wrkSize": {
+      "value": "medium"
+    },
+    "wrkCount": {
+      "value": "2"
+    },
+   "TagAssetCD": {
+      "value": "Lending"
+    },
+    "TagProjCD": {
+      "value": "000000000"
+    }
+  }
+}
